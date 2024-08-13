@@ -229,19 +229,55 @@ def save_model(model, model_name, directory="models", file_ext=".pth"):
     return model_save_path
 
 
-def load_model(model, model_path):
+def save_history(data, history_name, directory="historys", file_ext=".csv"):
     """
-    Loads a PyTorch model's state dictionary from a specified path.
+    Saves the training history to a specified directory.
 
     Args:
-        model (torch.nn.Module): The model to be loaded.
-        model_path (str): The path to the model file.
+        history (dict): The training history to be saved.
+        directory (str): The directory where the history will be saved. Default is 'history'.
+        file_ext (str): The file extension for the saved history. Default is '.json'.
     
     Returns:
-        torch.nn.Module: The loaded model.
     """
-    model.load_state_dict(torch.load(model_path))
-    return model
+    # Create a directory to save the history
+    history_path = Path(directory)
+    history_path.mkdir(parents=True, exist_ok=True)
+
+    # Create the full history save path
+    history_save_path = history_path / f"{history_name}{file_ext}"
+
+    # Save the history
+    data.to_csv(history_save_path, index=False)
+
+
+def save_checkpoint(model, optimizer, epoch, checkpoint_name, directory="checkpoints", file_ext=".pth"):
+    """
+    Saves the PyTorch model's state dictionary and optimizer's state dictionary to a specified directory.
+
+    Args:
+        model (torch.nn.Module): The model to be saved.
+        optimizer (torch.optim.Optimizer): The optimizer to be saved.
+        epoch (int): The epoch number.
+        model_name (str): The name of the model file.
+        directory (str): The directory where the model will be saved. Default is 'models'.
+        file_ext (str): The file extension for the saved model. Default is '.pth'.
+    
+    Returns:
+    """
+    # Create a directory to save the model
+    model_path = Path(directory)
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    # Create the full model save path
+    model_save_path = model_path / f"{checkpoint_name}{file_ext}"
+
+    # Save the model
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, model_save_path)
 
 
 def walk_through_dir(dir_path):
@@ -316,23 +352,6 @@ def plot_predictions(
 
     # Show the legend
     plt.legend(prop={"size": 14})
-
-
-# Calculate accuracy (a classification metric)
-def accuracy_fn(y_true, y_pred):
-    """Calculates accuracy between truth labels and predictions.
-
-    Args:
-        y_true (torch.Tensor): Truth labels for predictions.
-        y_pred (torch.Tensor): Predictions to be compared to predictions.
-
-    Returns:
-        [torch.float]: Accuracy value between y_true and y_pred, e.g. 78.45
-    """
-    correct = torch.eq(y_true, y_pred).sum().item()
-    acc = (correct / len(y_pred)) * 100
-    return acc
-
 
 def print_train_time(start, end, device=None):
     """Prints difference between start and end time.
