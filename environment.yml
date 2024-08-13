@@ -1,4 +1,4 @@
-name: /Users/wyattcheang/bird_model/env
+name: ./env
 channels:
   - conda-forge
 dependencies:
@@ -225,4 +225,4 @@ dependencies:
       - torchmetrics==1.4.1
       - torchvision==0.19.0
       - werkzeug==3.0.3
-prefix: /Users/wyattcheang/bird_model/env
+prefix: ./env
