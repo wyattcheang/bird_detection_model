@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from pathlib import Path
+from datetime import datetime
 from torchvision import transforms, datasets
 from torchmetrics import Accuracy
 from torch.utils.data import Dataset, DataLoader
@@ -159,7 +160,8 @@ def train_and_evaluate(
     scheduler: optim.lr_scheduler = None,
     start_epoch: int = 1,
     end_epoch: int = 10,
-    writer: SummaryWriter = None
+    writer: SummaryWriter = None,
+    name: str = "model",
 ) -> dict[str, list[dict[str, float]]]:
     training_results = []
     evaluation_results = []
@@ -197,10 +199,20 @@ def train_and_evaluate(
             writer.add_scalar('Accuracy/train', train_acc, epoch)
             writer.add_scalar('Accuracy/test', eval_acc, epoch)
         
-    return {
-        "train": training_results,
-        "eval": evaluation_results
-    }
+        result = {
+            "train": training_results,
+            "eval": evaluation_results
+        }
+        
+        # save checkpoint
+        save_checkpoint(model=model, 
+                        optimizer=optimizer, 
+                        scheduler=scheduler, 
+                        history=result, 
+                        epoch=epoch,
+                        model_name=name)
+        
+    return result
         
 
 def save_model(model, model_name, directory="models", file_ext=".pth"):
@@ -251,7 +263,7 @@ def save_history(data, history_name, directory="historys", file_ext=".csv"):
     data.to_csv(history_save_path, index=False)
 
 
-def save_checkpoint(model, optimizer, epoch, checkpoint_name, directory="checkpoints", file_ext=".pth"):
+def save_checkpoint(model, optimizer, scheduler, history, epoch, model_name, directory="checkpoints", file_ext=".pth"):
     """
     Saves the PyTorch model's state dictionary and optimizer's state dictionary to a specified directory.
 
@@ -266,17 +278,20 @@ def save_checkpoint(model, optimizer, epoch, checkpoint_name, directory="checkpo
     Returns:
     """
     # Create a directory to save the model
+    current_time = datetime.now().strftime("%Y%m%d%H%M%S")
     model_path = Path(directory)
     model_path.mkdir(parents=True, exist_ok=True)
 
     # Create the full model save path
-    model_save_path = model_path / f"{checkpoint_name}{file_ext}"
+    model_save_path = model_path / f"{model_name}_{current_time}{file_ext}"
 
     # Save the model
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'history': history,
     }, model_save_path)
 
 

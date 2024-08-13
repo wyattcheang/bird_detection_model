@@ -21,7 +21,7 @@ conda env create -f environment.yml
         i. horizontal flip
         ii. rotation
 3. test all functions is working, run all the entire file
-4. if no error, remember serach 'REMARK' and command out the testing part which is reducing the dataloader for testing purpose
+4. if no error, remember search 'REMARK' and comment out the testing part which is reducing the dataloader for testing purpose
 ```
 ### REMARK: for testing purposes, reduce the dataset to 10% of the original size
 train_dataset.dataset.samples = train_dataset.dataset.samples[:int(len(train_dataset)*0.1)]
@@ -32,6 +32,7 @@ len(train_dataset), len(test_dataset), len(valid_dataset)
 ```
 5. remember save every trained model and history, screenshot all the training and evaluation as well.
 6. remember rename each trained model version to avoid overwritting.
+7. run ```tensorboard --logdir=runs``` in terminal to view the accuracy and loss result.
 
 
 
