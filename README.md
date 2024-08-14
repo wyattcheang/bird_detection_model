@@ -5,7 +5,7 @@ install all the environment based on the ```environment.yml``` file using conda 
 
 ### for conda user can run these code.
 ```
-conda env create -f environment.yml
+conda env create -f environment.yml -p ./env
 ```
 
 ## Dataset Download
