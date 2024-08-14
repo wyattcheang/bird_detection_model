@@ -279,7 +279,7 @@ def save_checkpoint(model, optimizer, scheduler, history, epoch, model_name, dir
     """
     # Create a directory to save the model
     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    model_path = Path(f"{directory}/{model_name}")
+    model_path = Path(directory)
     model_path.mkdir(parents=True, exist_ok=True)
 
     # Create the full model save path
