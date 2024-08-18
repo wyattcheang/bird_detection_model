@@ -110,16 +110,6 @@ def eval_model(model: nn.Module,
               device: torch.device = 'mps',
               epoch: int = 1
               ) -> tuple[float, float]:
-    """eval the model
-
-    Args:
-        model (nn.Module): The model to test
-        data_loader (torch.utils.data.DataLoader): The data loader for the testing data
-        loss_fn (nn.Module): The loss function to calculate the loss
-        accuracy_fn (torchmetrics.Accuracy): The accuracy function to calculate the accuracy
-        device (torch.device, optional): The device used to train the model. Defaults to 'mps'
-        epoch (int, optional): The number of epochs to train the model. Defaults to 1.
-    """
     
     model.eval()
     total_loss, total_acc = 0.0, 0.0
