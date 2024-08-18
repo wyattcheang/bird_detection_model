@@ -2,5 +2,7 @@
 __pycache__/
 data/
 env/
-db.sqlite3
-historys/baseline_v1.csv
+runs/
+checkpoints/
+*.sqlite3
+.DS_Store
