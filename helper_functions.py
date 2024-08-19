@@ -11,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import time
+import seaborn as sns
 from tqdm.auto import tqdm
 
 import numpy as np
@@ -540,3 +541,141 @@ def download_data(source: str,
             os.remove(data_path / target_file)
     
     return image_path
+
+
+def predict_model(model: nn.Module,
+              data_loader: torch.utils.data.DataLoader,
+              device: torch.device = 'mps'):
+    """eval the model
+
+    Args:
+        model (nn.Module): The model to test
+        data_loader (torch.utils.data.DataLoader): The data loader for the testing data
+        device (torch.device, optional): The device used to train the model. Defaults to 'mps'
+    """
+    
+    model.eval()
+    targets, preds = [], []
+    
+    with torch.inference_mode(), tqdm(data_loader, desc=f"Making Prediction") as pbar:
+        for input, label in pbar:
+            input, label = input.to(device), label.to(device)
+                        
+            output = model(input)
+            pred = output.softmax(dim=1).argmax(dim=1)
+            
+            targets.append(label.cpu())
+            preds.append(pred.cpu())
+        
+        return {
+            "name": model.__class__.__name__,
+            "targets": targets,
+            "preds": preds,
+        }
+        
+        
+def plot_confusion_matrix_range(title, conf_mat, class_names, range_slice=slice(None)):
+    # Sum confusion matrix rows to find most confused classes
+    class_errors = conf_mat.sum(axis=1) - conf_mat.diagonal()
+
+    # Get the indices for the specified range using the slice object
+    sorted_indices = np.argsort(class_errors)
+    selected_indices = sorted_indices[range_slice]
+
+    # Select classes from confusion matrix
+    conf_mat_range = conf_mat[selected_indices][:, selected_indices]
+    class_names_range = [class_names[i] for i in selected_indices]
+
+    # Plot
+    plt.figure(figsize=(16, 12))
+    sns.heatmap(conf_mat_range, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=class_names_range, yticklabels=class_names_range)
+    plt.title(f'{title}')
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
+    plt.show()
+
+def plot_accuracy_loss(df):
+    # Separate train and eval data
+    train_data = df[df['set'] == 'train']
+    eval_data = df[df['set'] == 'eval']
+
+    # Create a figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    # Plot Loss
+    ax1.plot(train_data['epoch'], train_data['loss'], 'b-', label='Train')
+    ax1.plot(eval_data['epoch'], eval_data['loss'], 'r-', label='Eval')
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Training and Evaluation Loss')
+    ax1.legend()
+    ax1.grid(True)
+
+    # Plot Accuracy
+    ax2.plot(train_data['epoch'], train_data['accuracy'], 'b-', label='Train')
+    ax2.plot(eval_data['epoch'], eval_data['accuracy'], 'r-', label='Eval')
+    ax2.set_xlabel('Epoch')
+    ax2.set_ylabel('Accuracy')
+    ax2.set_title('Training and Evaluation Accuracy')
+    ax2.legend()
+    ax2.grid(True)
+
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    plt.show()
+    
+
+def plot_random_samples_grid(valid_loader, model, classes):
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Collect 16 random samples from the entire validation set
+    images_list = []
+    labels_list = []
+    predicted_list = []
+
+    while len(images_list) < 16:
+        for images, labels in valid_loader:
+            if len(images_list) >= 16:
+                break
+
+            # Randomly select images from this batch
+            for i in range(len(images)):
+                if len(images_list) >= 16:
+                    break
+
+                image = images[i].unsqueeze(0).to(
+                    next(model.parameters()).device)
+
+                with torch.inference_mode():
+                    output = model(image)
+                    _, predicted = torch.max(output, 1)
+
+                images_list.append(image.squeeze().cpu())
+                labels_list.append(labels[i].cpu())
+                predicted_list.append(predicted.cpu())
+
+    # Plot the images in a 4x4 grid
+    fig, axes = plt.subplots(4, 4, figsize=(16, 16))
+
+    for i in range(16):
+        ax = axes[i // 4, i % 4]
+        # Convert from CxHxW to HxWxC for plotting
+        ax.imshow(images_list[i].permute(1, 2, 0))
+        # Check if the prediction is correct
+        if predicted_list[i].item() == labels_list[i].item():
+            title_color = 'black'
+
+            title_text = f'Pred: {classes[predicted_list[i].item()]} \n Actual: {classes[labels_list[i].item()]}'
+        else:
+            title_color = 'red'
+            title_text = f'Pred: {classes[predicted_list[i].item()]} \n Actual: {classes[labels_list[i].item()]}'
+
+        # Set the title with the appropriate color and boldness
+        ax.set_title(title_text, color=title_color, fontweight='bold')
+        ax.axis('off')  # Hide the axis
+
+    plt.tight_layout()
+    plt.show()
